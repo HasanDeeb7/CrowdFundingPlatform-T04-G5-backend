@@ -4,6 +4,7 @@ import sequelize from "./config/dbConnection.js";
 import cors from "cors";
 
 import { userRouter } from "./routes/user.routes.js";
+import campaignRoutes from './routes/campaignRoutes';
 
 const port = process.env.PORT;
 const app = express();
@@ -17,7 +18,11 @@ try {
 }
 
 app.use("/users", userRouter);
+app.use("/campaigns", campaignRoutes);
 
 app.listen(port, () => {
   console.log(`Listening on port ${port}`);
 });
+
+
+
