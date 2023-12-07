@@ -1,13 +1,10 @@
-// import User from "../models/user.js";
 import fs from "fs";
 import User from "../models/User.models.js";
 import Donor from "../models/donor.js";
 import Creator from "../models/Creator.models.js";
-import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 import "dotenv/config";
 import Admin from "../models/adminModel.js";
-import { request } from "http";
 
 function removeImage(image) {
   fs.unlinkSync(`public/images/${image}`, (err) => {
@@ -42,7 +39,7 @@ async function getAllUsers(req, res) {
 
 async function addNewUser(req, res) {
   let user = req.body;
-  const role = req.body.role || "donor";
+  user.role = req.body.role || "donor";
   let image;
   if (!req.file) {
     req.file = { filename: "user.jpg" };
@@ -53,35 +50,26 @@ async function addNewUser(req, res) {
 
   try {
     if (!user.firstName || !user.lastName || !user.userName || !user.password) {
-      if (image) {
-        removeImage(image);
-      }
       return res.status(400).json({ error: "missing required property" });
-    } else if (!image) {
-      return res.status(400).json({ error: "missing image" });
     } else {
-      // const token = createToken(user.id);
       let passExpression = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{6,20}$/;
-      let userNameExpression = /^[A-Za-z]{5,}[0-9]{1,}$/;
+      let userNameExpression = /^[a-zA-Z][a-zA-Z0-9]{5,11}$/;
       if (!user.password.match(passExpression)) {
-        removeImage(image);
         return res.status(400).json({
           error:
             "password should start with letter and has 6 to 20 characters which contain at least one numeric digit, one uppercase and one lowercase letter",
         });
       }
       if (!user.userName.match(userNameExpression)) {
-        removeImage(image);
         return res.status(400).json({
           error:
-            "userName should have at least one numeric digit at the end and start with a letter",
+            "Invalid username. Please ensure it starts with a letter, is between 6 and 12 characters, and contains at least one numeric digit.",
         });
       } else {
         let findUser = await User.findOne({
           where: { userName: user.userName },
         });
         if (findUser) {
-          removeImage(image);
           return res.status(400).json({ error: "userName is already exist" });
         } else {
           const hashedPass = await bcrypt.hash(user.password, 10);
@@ -91,54 +79,35 @@ async function addNewUser(req, res) {
             const newUser = await User.create({
               ...user,
               password: hashedPass,
-              role: role,
+              role: user.role,
             });
             if (user.role === "donor") {
               const newDonor = await Donor.create();
-              const token = jwt.sign(
-                { id: newDonor.id, role: "donor" },
-                process.env.TOKEN,
-                { expiresIn: "2h" }
-              );
-              newDonor.token = token;
               await newDonor.setUser(newUser);
               await newUser.save();
               await newDonor.save();
               return res.json({ user: newUser, donor: newDonor });
             } else if (user.role === "creator") {
+              console.log('creator')
               const newCreator = await Creator.create();
-              const token = jwt.sign(
-                { id: newCreator.id, role: "creator" },
-                process.env.TOKEN,
-                { expiresIn: "2h" }
-              );
-              newCreator.token = token;
               await newCreator.setUser(newUser);
               await newUser.save();
               await newCreator.save();
               return res.json({ user: newUser, creator: newCreator });
             } else {
               const newAdmin = await Admin.create();
-              const token = jwt.sign(
-                { id: newAdmin.id, role: "admin" },
-                process.env.TOKEN,
-                { expiresIn: "2h" }
-              );
-              newAdmin.token = token;
               await newAdmin.setUser(newUser);
               await newAdmin.save();
               await newUser.save();
               res.json({ data: newUser, admin: newAdmin });
             }
           } catch (error) {
-            removeImage(user.image);
             console.log(error);
           }
         }
       }
     }
   } catch (error) {
-    removeImage(image);
     console.log(error);
     return res.status(400).json(error);
   }
@@ -148,7 +117,6 @@ async function updateUser(req, res) {
   const user = req.body;
   let newImage;
   user.id = req.userId;
-  console.log(req.userId);
 
   const found = await User.findOne({ where: { id: user.id } });
   if (!req.file) {
@@ -216,4 +184,15 @@ function deleteUser(req, res) {
     }
   });
 }
-export { getAllUsers, addNewUser, updateUser, deleteUser };
+async function getOneUser(req, res) {
+  try {
+    const data = await User.findByPk(req.user.userId, {
+      include: Object.values(User.associations),
+    });
+    console.log(data);
+    res.json({ user: data });
+  } catch (error) {
+    console.log(error);
+  }
+}
+export { getAllUsers, addNewUser, updateUser, deleteUser, getOneUser };

@@ -8,7 +8,7 @@ const Donor = sequelize.define("Donor", {
     defaultValue: 0,
     allowNull: false,
   },
-  amountPaid: { type: DataTypes.INTEGER, defaultValue: 0, allowNull: false },
+  amountPaid: { type: DataTypes.INTEGER, defaultValue: 0, allowNull: false }
 });
 
 export default Donor;

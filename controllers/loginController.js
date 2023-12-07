@@ -13,10 +13,10 @@ export async function signIn(req, res) {
       where: { userName: username },
       include: Object.values(User.associations),
     });
+    console.log(user);
     if (!user) {
       res.status(400).json({ message: "User Not Found!" });
     } else {
-      console.log(user);
       const id =
         user.role === "creator"
           ? user.Creator.id
@@ -28,13 +28,14 @@ export async function signIn(req, res) {
         const token = jwt.sign(
           { roleId: id, role: user.role, userId: user.id },
           process.env.TOKEN,
-          { expiresIn: "2h" }
+          { expiresIn: "24h" }
         );
         user.token = token;
         res
           .cookie("access_token", token, {
             httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
+            secure: "true",
+            sameSite: "None",
           })
           .status(200)
           .json(user);

@@ -10,7 +10,7 @@ import donorRouter from "./routes/donorRoutes.js";
 import donationRouter from "./routes/donationRoute.js";
 import cookieParser from "cookie-parser";
 import { signIn } from "./controllers/loginController.js";
-import { authorize, logOut } from "./middlewares/auth.js";
+import { authenticate, logOut } from "./middlewares/auth.js";
 import "./models/notificationModel.js";
 
 const port = process.env.PORT;
@@ -42,6 +42,10 @@ app.get("/protected", authorize, (req, res) => {
   return res.json({ user: { id: req.userId, role: req.userRole } });
 });
 app.get("/logout", logOut);
+app.get('/auth',authenticate, (req,res)=>{
+  console.log(req.user)
+  res.json({user: req.user})
+} )
 
 app.listen(port, () => {
   console.log(`Listening on port ${port}`);
