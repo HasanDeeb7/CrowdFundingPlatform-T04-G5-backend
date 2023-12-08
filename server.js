@@ -13,6 +13,7 @@ import { signIn } from "./controllers/loginController.js";
 import { authenticate, logOut } from "./middlewares/auth.js";
 import "./models/notificationModel.js";
 
+
 const port = process.env.PORT;
 const app = express();
 app.use(express.json());
@@ -38,9 +39,9 @@ app.use("/categories", categoryRouter);
 app.use("/donors", donorRouter);
 app.use("/donations", donationRouter);
 app.get("/login", signIn);
-app.get("/protected", authorize, (req, res) => {
-  return res.json({ user: { id: req.userId, role: req.userRole } });
-});
+// app.get("/protected", authorize, (req, res) => {
+//   return res.json({ user: { id: req.userId, role: req.userRole } });
+// });
 app.get("/logout", logOut);
 app.get('/auth',authenticate, (req,res)=>{
   console.log(req.user)
